@@ -17,6 +17,7 @@
 
 # License: GPLv3
 # Date: 15 May 2014
+# Edit: 16 May 2014
 # Website: http://github.com/trizen/fbrowse-tray
 # Generic name: A simple tray file browser.
 
@@ -35,7 +36,7 @@ use Encode qw(decode_utf8);
 use File::MimeInfo qw(mimetype);    # File::MimeInfo::Magic is better, but slower...
 
 my $pkgname = 'fbrowse-tray';
-my $version = 0.01;
+my $version = 0.02;
 
 my %opt = (
            m => 'menu',
@@ -49,12 +50,12 @@ sub usage {
 usage: $0 [options] [dir]
 
 options:
-        -r            : order files before directories
-        -t            : set the path of the file as tooltip
-        -i [name]     : change the status icon (default: $opt{i})
-        -f [command]  : command to open the files with (default: $opt{f})
-        -m [size]     : size of the menu icons (default: $opt{m})
-                        more: dnd, dialog, button, small-toolbar, large-toolbar
+    -r            : order files before directories
+    -t            : set the path of the file as tooltip
+    -i [name]     : change the status icon (default: $opt{i})
+    -f [command]  : command to open the files with (default: $opt{f})
+    -m [size]     : size of the menu icons (default: $opt{m})
+                    more: dnd, dialog, button, small-toolbar, large-toolbar
 
 example:
     $0 -f thunar -m dnd /my/dir
