@@ -34,7 +34,7 @@ use File::MimeInfo qw();    # File::MimeInfo::Magic is better, but slower...
 use Encode qw(decode_utf8);
 
 my $pkgname = 'fbrowse-tray';
-my $version = 0.03;
+my $version = 0.04;
 
 my %opt = (
            m => 'menu',
