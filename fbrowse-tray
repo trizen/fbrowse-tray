@@ -17,7 +17,7 @@
 
 # License: GPLv3
 # Date: 15 May 2014
-# Edit: 17 May 2014
+# Edit: 18 June 2014
 # Website: http://github.com/trizen/fbrowse-tray
 # Generic name: A simple tray file browser.
 
@@ -34,7 +34,7 @@ use File::MimeInfo qw();    # File::MimeInfo::Magic is better, but slower...
 use Encode qw(decode_utf8);
 
 my $pkgname = 'fbrowse-tray';
-my $version = 0.04;
+my $version = 0.05;
 
 my %opt = (
            m => 'menu',
@@ -146,7 +146,7 @@ sub append_dir {
     # Set icon
     $item->set_image('Gtk2::Image'->new_from_icon_name('inode-directory', $opt{m}));
 
-    # Set a signal (activates on click)
+    # Set a signal
     $item->signal_connect('activate' => sub { create_submenu($item, $dir); $dirmenu->destroy });
 
     # Set the submenu to the entry item
@@ -210,6 +210,65 @@ sub file_icon {
 
 # -------------------------------------------------------------------------------------
 
+# Open file
+sub open_file {
+    my ($file) = @_;
+    system "$opt{f} \Q$file\E &";
+}
+
+# -------------------------------------------------------------------------------------
+
+# File action
+sub file_actions {
+    my ($obj, $event, $file) = @_;
+
+    if ($event->button == 1 or $event->button == 2) {
+
+        open_file($file);    # open the file
+
+        if ($event->button == 1) {
+            return 0;        # hide the menu when left-clicked
+        }
+
+        return 1;            # keep the menu when middle-clicked
+    }
+
+    # Right-click menu
+    my $menu = 'Gtk2::Menu'->new;
+
+    # Open
+    my $open = 'Gtk2::ImageMenuItem'->new('Open');
+
+    # Set icon
+    $open->set_image('Gtk2::Image'->new_from_icon_name('gtk-open', $opt{m}));
+
+    # Set a signal (activates on click)
+    $open->signal_connect('activate' => sub { open_file($file) });
+
+    # Append the item to the menu
+    $menu->append($open);
+
+    # Delete
+    my $delete = 'Gtk2::ImageMenuItem'->new('Delete');
+
+    # Set icon
+    $delete->set_image('Gtk2::Image'->new_from_icon_name('gtk-delete', $opt{m}));
+
+    # Set a signal (activates on click)
+    $delete->signal_connect('activate' => sub { unlink($file) and $obj->destroy });
+
+    # Append the item to the menu
+    $menu->append($delete);
+
+    # Show menu
+    $menu->show_all;
+    $menu->popup(undef, undef, undef, [1, 1], 0, 0);
+
+    return 1;    # don't hide the main menu
+}
+
+# -------------------------------------------------------------------------------------
+
 # Append a file to a submenu
 sub append_file {
     my ($submenu, $filename, $file) = @_;
@@ -224,12 +283,27 @@ sub append_file {
     $opt{t} && $item->set_property('tooltip_text', $file);
 
     # Set a signal (activates on click)
-    $item->signal_connect('activate' => sub { system "$opt{f} \Q$file\E &" });
+    $item->signal_connect('button-release-event' => sub { file_actions(@_, $file) });
 
     # Append the item to the submenu
     $submenu->append($item);
 
     return 1;
+}
+
+# -------------------------------------------------------------------------------------
+
+# Resolve link
+sub resolvelink {
+    my ($file) = @_;
+    my $link = readlink($file) // return;
+
+    require File::Spec;
+    my (undef, $dir, undef) = File::Spec->splitpath($file);
+    $link = File::Spec->rel2abs($link, $dir);
+    $link = __SUB__->($link) if -l $link;    # recurs
+
+    $link;
 }
 
 # -------------------------------------------------------------------------------------
@@ -253,16 +327,12 @@ sub add_content {
 
         # Readlink
         if (-l $abs_path) {
-            $abs_path = readlink($abs_path) // next;
-            if (not chr ord $abs_path eq '/') {
-                require File::Spec;
-                $abs_path = File::Spec->catfile($dir, $abs_path);
-            }
+            $abs_path = resolvelink($abs_path) // next;
             -e $abs_path or next;
         }
 
         # Collect the files and dirs
-        push +((-d _) ? \@dirs : \@files), [$filename =~ s/_/__/gr, $abs_path];
+        push @{(-d _) ? \@dirs : \@files}, [$filename =~ s/_/__/gr, $abs_path];
     }
     closedir $dir_h;
 
