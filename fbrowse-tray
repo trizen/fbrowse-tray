@@ -17,7 +17,7 @@
 
 # License: GPLv3
 # Date: 15 May 2014
-# Edit: 18 June 2014
+# Edit: 14 May 2016
 # Website: http://github.com/trizen/fbrowse-tray
 # Generic name: A simple tray file browser.
 
@@ -34,7 +34,7 @@ use File::MimeInfo qw();    # File::MimeInfo::Magic is better, but slower...
 use Encode qw(decode_utf8);
 
 my $pkgname = 'fbrowse-tray';
-my $version = 0.05;
+my $version = 0.06;
 
 my %opt = (
            m => 'menu',
@@ -364,7 +364,7 @@ sub create_main_menu {
         $exit->set_image('Gtk2::Image'->new_from_icon_name('exit', $opt{m}));
 
         # Set a signal (activates on click)
-        $exit->signal_connect('activate' => sub { 'Gtk2'->main_quit(); exit });
+        $exit->signal_connect('activate' => sub { 'Gtk2'->main_quit() });
 
         # Append the item to the menu
         $menu->append($exit);
