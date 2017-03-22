@@ -264,7 +264,7 @@ sub file_actions {
     $delete->set_image('Gtk2::Image'->new_from_icon_name('gtk-delete', $opt{m}));
 
     # Set a signal (activates on click)
-    $delete->signal_connect('activate' => sub { unlink($file) });
+    $delete->signal_connect('activate' => sub { unlink($file) and $obj->destroy });
 
     # Append the item to the menu
     $menu->append($delete);
