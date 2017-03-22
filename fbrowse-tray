@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2014 Daniel "Trizen" Șuteu <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
+# Copyright (C) 2014-2017 Daniel "Trizen" Șuteu <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,14 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # License: GPLv3
-# Date: 15 May 2014
-# Edit: 14 May 2016
-# Website: http://github.com/trizen/fbrowse-tray
-# Generic name: A simple tray file browser.
+# Created on: 15 May 2014
+# Latest edit: 22 March 2017
+# http://github.com/trizen/fbrowse-tray
 
-# ---------------------------------------------------------
-# Recursively browse filesystem through a GTK+ tray applet.
-# ---------------------------------------------------------
+# -----------------------------------------------
+# A file-browser through a Gtk2 tray status icon.
+# -----------------------------------------------
 
 use 5.016;
 use strict;
@@ -34,12 +33,13 @@ use File::MimeInfo qw();    # File::MimeInfo::Magic is better, but slower...
 use Encode qw(decode_utf8);
 
 my $pkgname = 'fbrowse-tray';
-my $version = 0.06;
+my $version = 0.07;
 
 my %opt = (
            m => 'menu',
            i => 'file-manager',
-           f => $ENV{FILEMANAGER} // 'pcmanfm',
+           f => $ENV{FILEMANAGER} || 'pcmanfm',
+           t => $ENV{TERM} || 'xterm',
           );
 
 sub usage {
@@ -49,15 +49,17 @@ usage: $0 [options] [dir]
 
 options:
     -r            : order files before directories
-    -t            : set the path of the file as tooltip
+    -d            : display only directories
+    -T            : set the path of files as tooltip
     -e            : get the mimetype by extension only (faster)
     -i [name]     : change the status icon (default: $opt{i})
     -f [command]  : command to open the files with (default: $opt{f})
+    -t [command]  : terminal command for "Open in terminal" (default: $opt{t})
     -m [size]     : size of the menu icons (default: $opt{m})
                     more: dnd, dialog, button, small-toolbar, large-toolbar
 
 example:
-    $0 -f thunar -m dnd /my/dir
+    $0 -f thunar -t xterm -m dnd /my/dir
 USAGE
     exit($code // 0);
 }
@@ -70,7 +72,7 @@ sub version {
 # Parse arguments
 if (@ARGV && chr ord $ARGV[0] eq '-') {
     require Getopt::Std;
-    Getopt::Std::getopts('ti:m:f:rhve', \%opt)
+    Getopt::Std::getopts('Ti:m:f:t:drehv', \%opt)
       || die "Error in command-line arguments!";
     $opt{h} && usage(0);
     $opt{v} && version();
@@ -95,13 +97,20 @@ $opt{icon_theme} = 'Gtk2::IconTheme'->get_default;
 
 # -------------------------------------------------------------------------------------
 
-sub add_browse_here {
+sub add_header {
     my ($menu, $dir) = @_;
 
-    # Append 'Browser here...'
-    my $browse_here = 'Gtk2::ImageMenuItem'->new("Browse here...");
-    $browse_here->signal_connect('activate' => sub { system "$opt{f} \Q$dir\E &" });
-    $menu->append($browse_here);
+    # Add 'Open directory'
+    my $open_dir = 'Gtk2::ImageMenuItem'->new("Open directory");
+    $open_dir->set_image('Gtk2::Image'->new_from_icon_name('folder-open', $opt{m}));
+    $open_dir->signal_connect('activate' => sub { system "$opt{f} \Q$dir\E &" });
+    $menu->append($open_dir);
+
+    # Add 'Open in terminal'
+    my $open_term = 'Gtk2::ImageMenuItem'->new("Open in terminal");
+    $open_term->set_image('Gtk2::Image'->new_from_icon_name('utilities-terminal', $opt{m}));
+    $open_term->signal_connect('activate' => sub { system "cd \Q$dir\E; $opt{t} &" });
+    $menu->append($open_term);
 
     return 1;
 }
@@ -113,8 +122,8 @@ sub create_submenu {
     # Create a new menu
     my $menu = 'Gtk2::Menu'->new;
 
-    # Add 'Browse here...'
-    add_browse_here($menu, $dir);
+    # Add menu header
+    add_header($menu, $dir);
 
     # Append an horizontal separator
     $menu->append('Gtk2::SeparatorMenuItem'->new);
@@ -147,7 +156,7 @@ sub append_dir {
     $item->set_image('Gtk2::Image'->new_from_icon_name('inode-directory', $opt{m}));
 
     # Set a signal
-    $item->signal_connect('activate' => sub { create_submenu($item, $dir); $dirmenu->destroy });
+    $item->signal_connect('activate' => sub { create_submenu($item, $dir) });
 
     # Set the submenu to the entry item
     $item->set_submenu($dirmenu);
@@ -255,7 +264,7 @@ sub file_actions {
     $delete->set_image('Gtk2::Image'->new_from_icon_name('gtk-delete', $opt{m}));
 
     # Set a signal (activates on click)
-    $delete->signal_connect('activate' => sub { unlink($file) and $obj->destroy });
+    $delete->signal_connect('activate' => sub { unlink($file) });
 
     # Append the item to the menu
     $menu->append($delete);
@@ -280,7 +289,7 @@ sub append_file {
     $item->set_image('Gtk2::Image'->new_from_icon_name(file_icon($filename, $file), $opt{m}));
 
     # Set tooltip
-    $opt{t} && $item->set_property('tooltip_text', $file);
+    $opt{T} && $item->set_property('tooltip_text', $file);
 
     # Set a signal (activates on click)
     $item->signal_connect('button-release-event' => sub { file_actions(@_, $file) });
@@ -329,6 +338,11 @@ sub add_content {
         if (-l $abs_path) {
             $abs_path = resolvelink($abs_path) // next;
             -e $abs_path or next;
+        }
+
+        # Ignore non directories (with -d)
+        if ($opt{d}) {
+            (-d _) || next;
         }
 
         # Collect the files and dirs
