@@ -186,7 +186,7 @@ sub file_icon {
                       ? File::MimeInfo::globs($filename)
                       : File::MimeInfo::mimetype($file)
                      ) // return 'unknown'
-                    ) =~ tr{/}{-}r;
+                    ) =~ tr|/|-|r;
 
     exists($alias{$mime_type})
       && return $alias{$mime_type};
