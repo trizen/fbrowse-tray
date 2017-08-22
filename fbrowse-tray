@@ -340,7 +340,7 @@ sub add_content {
             -e $abs_path or next;
         }
 
-        # Ignore non directories (with -d)
+        # Ignore non-directories (with -d)
         if ($opt{d}) {
             (-d _) || next;
         }
