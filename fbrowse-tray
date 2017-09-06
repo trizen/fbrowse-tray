@@ -17,13 +17,14 @@
 
 # License: GPLv3
 # Created on: 15 May 2014
-# Latest edit: 22 March 2017
+# Latest edit: 06 September 2017
 # http://github.com/trizen/fbrowse-tray
 
 # -----------------------------------------------
 # A file-browser through a Gtk2 tray status icon.
 # -----------------------------------------------
 
+use utf8;
 use 5.016;
 use strict;
 use warnings;
@@ -352,7 +353,16 @@ sub add_content {
 
     my @calls = ([\&append_dir => \@dirs], [\&append_file => \@files]);
     foreach my $call ($opt{r} ? reverse(@calls) : @calls) {
-        $call->[0]->($submenu, $_->[0], $_->[1]) for sort { fc($a->[0]) cmp fc($b->[0]) } @{$call->[1]};
+        for my $pair (sort { fc($a->[0]) cmp fc($b->[0]) } @{$call->[1]}) {
+
+            my $label = $pair->[0];
+
+            if (length($label) > 64) {
+                $label = substr($label, 0, 32) . '⋯' . substr($label, -32);
+            }
+
+            $call->[0]->($submenu, '_' . $label, $pair->[1]);
+        }
     }
 
     return 1;
