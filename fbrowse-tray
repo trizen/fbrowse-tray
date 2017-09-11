@@ -34,11 +34,11 @@ use File::MimeInfo qw();    # File::MimeInfo::Magic is better, but slower...
 use Encode qw(decode_utf8);
 
 my $pkgname = 'fbrowse-tray';
-my $version = 0.07;
+my $version = 0.08;
 
 my %opt = (
            m => 'menu',
-           i => 'file-manager',
+           i => 'system-file-manager',
            f => $ENV{FILEMANAGER} || 'pcmanfm',
            t => $ENV{TERM} || 'xterm',
           );
@@ -51,12 +51,12 @@ usage: $0 [options] [dir]
 options:
     -r            : order files before directories
     -d            : display only directories
-    -T            : set the path of files as tooltip
+    -T            : set the path of files as tooltips
     -e            : get the mimetype by extension only (faster)
-    -i [name]     : change the status icon (default: $opt{i})
+    -i [name]     : name of the status icon (default: $opt{i})
     -f [command]  : command to open the files with (default: $opt{f})
     -t [command]  : terminal command for "Open in terminal" (default: $opt{t})
-    -m [size]     : size of the menu icons (default: $opt{m})
+    -m [type]     : type of menu icons (default: $opt{m})
                     more: dnd, dialog, button, small-toolbar, large-toolbar
 
 example:
@@ -104,7 +104,7 @@ sub add_header {
     # Add 'Open directory'
     my $open_dir = 'Gtk2::ImageMenuItem'->new("Open directory");
     $open_dir->set_image('Gtk2::Image'->new_from_icon_name('folder-open', $opt{m}));
-    $open_dir->signal_connect('activate' => sub { system "$opt{f} \Q$dir\E &" });
+    $open_dir->signal_connect('activate' => sub { open_file($dir) });
     $menu->append($open_dir);
 
     # Add 'Open in terminal'
@@ -154,7 +154,7 @@ sub append_dir {
     my $item = 'Gtk2::ImageMenuItem'->new($dirname);
 
     # Set icon
-    $item->set_image('Gtk2::Image'->new_from_icon_name('inode-directory', $opt{m}));
+    $item->set_image('Gtk2::Image'->new_from_icon_name('folder', $opt{m}));
 
     # Set a signal
     $item->signal_connect('activate' => sub { create_submenu($item, $dir) });
@@ -176,7 +176,7 @@ sub is_icon_valid {
     $mem{$_[0]} //= $opt{icon_theme}->has_icon($_[0]);
 }
 
-# Returns a valid icon name based on file's mime-type
+# Returns a valid icon name for a given file, based on its mimetype
 sub file_icon {
     my ($filename, $file) = @_;
 
@@ -196,10 +196,10 @@ sub file_icon {
         my $type = $mime_type;
         while (1) {
             if (is_icon_valid($type)) {
-                return $alias{$mime_type} = $type;
+                return ($alias{$mime_type} = $type);
             }
             elsif (is_icon_valid("gnome-mime-$type")) {
-                return $alias{$mime_type} = "gnome-mime-$type";
+                return ($alias{$mime_type} = "gnome-mime-$type");
             }
             $type =~ s{.*\K[[:punct:]]\w++$}{} || last;
         }
@@ -210,7 +210,7 @@ sub file_icon {
         while (1) {
             $type =~ s{^application-x-\K.*?-}{} || last;
             if (is_icon_valid($type)) {
-                return $alias{$mime_type} = $type;
+                return ($alias{$mime_type} = $type);
             }
         }
     }
