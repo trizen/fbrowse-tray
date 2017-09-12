@@ -385,7 +385,7 @@ sub create_main_menu {
         my $exit = 'Gtk2::ImageMenuItem'->new('Quit');
 
         # Set icon
-        $exit->set_image('Gtk2::Image'->new_from_icon_name('exit', $opt{m}));
+        $exit->set_image('Gtk2::Image'->new_from_icon_name('application-exit', $opt{m}));
 
         # Set a signal (activates on click)
         $exit->signal_connect('activate' => sub { 'Gtk2'->main_quit() });
