@@ -1,6 +1,14 @@
 fbrowse-tray
 ============
 
+A file-browser through a Gtk2 tray status icon.
+
+![fbrowse-tray](https://3.bp.blogspot.com/-J3sjyKKTRQw/U3U3UpTBmZI/AAAAAAAAQ8g/yIJXgEYBa8U/s1600/2014-05-16-005138_1920x1080_scrot.png)
+
+----
+
+## USAGE
+
 ```
 usage: fbrowse-tray [options] [dir]
 
