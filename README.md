@@ -1,7 +1,7 @@
 fbrowse-tray
 ============
 
-A file-browser through a Gtk2 tray status icon.
+A file-browser through a Gtk3 tray status icon.
 
 ![fbrowse-tray](https://3.bp.blogspot.com/-J3sjyKKTRQw/U3U3UpTBmZI/AAAAAAAAQ8g/yIJXgEYBa8U/s1600/2014-05-16-005138_1920x1080_scrot.png)
 
@@ -24,5 +24,5 @@ options:
                     more: dnd, dialog, button, small-toolbar, large-toolbar
 
 example:
-    fbrowse-tray -f thunar -t sakura -m dnd /my/dir
+    fbrowse-tray -f thunar -t tilix -m dnd /my/dir
 ```

@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2014-2017 Daniel "Trizen" Șuteu <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
+# Copyright (C) 2014-2021 Daniel "Trizen" Șuteu <echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d>.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,15 +13,15 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # License: GPLv3
 # Created on: 15 May 2014
-# Latest edit: 12 September 2017
-# http://github.com/trizen/fbrowse-tray
+# Latest edit: 22 August 2021
+# https://github.com/trizen/fbrowse-tray
 
 # -----------------------------------------------
-# A file-browser through a Gtk2 tray status icon.
+# A file-browser through a Gtk3 tray status icon.
 # -----------------------------------------------
 
 use utf8;
@@ -29,18 +29,18 @@ use 5.016;
 use strict;
 use warnings;
 
-use Gtk2 qw(-init);
+use Gtk3 qw(-init);
 use File::MimeInfo qw();    # File::MimeInfo::Magic is better, but slower...
 use Encode qw(decode_utf8);
 
 my $pkgname = 'fbrowse-tray';
-my $version = 0.08;
+my $version = 0.09;
 
 my %opt = (
            m => 'menu',
            i => 'system-file-manager',
-           f => $ENV{FILEMANAGER} || 'pcmanfm',
-           t => $ENV{TERM} || 'xterm',
+           f => $ENV{FILEMANAGER} || 'thunar',
+           t => $ENV{TERM}        || 'tilix',
           );
 
 sub usage {
@@ -82,18 +82,18 @@ if (@ARGV && chr ord $ARGV[0] eq '-') {
 @ARGV == 1 || usage(2);
 
 # Cache the current icon theme
-$opt{icon_theme} = 'Gtk2::IconTheme'->get_default;
+$opt{icon_theme} = Gtk3::IconTheme::get_default();
 
 #
 ## Main menu
 #
 {
     my $dir  = decode_utf8(shift @ARGV);
-    my $icon = 'Gtk2::StatusIcon'->new;
+    my $icon = 'Gtk3::StatusIcon'->new;
     $icon->set_from_icon_name($opt{i});
     $icon->set_visible(1);
     $icon->signal_connect('button-release-event' => sub { create_main_menu($icon, $dir, $_[1]) });
-    'Gtk2'->main;
+    'Gtk3'->main;
 }
 
 # -------------------------------------------------------------------------------------
@@ -102,14 +102,14 @@ sub add_header {
     my ($menu, $dir) = @_;
 
     # Add 'Open directory'
-    my $open_dir = 'Gtk2::ImageMenuItem'->new("Open directory");
-    $open_dir->set_image('Gtk2::Image'->new_from_icon_name('folder-open', $opt{m}));
+    my $open_dir = 'Gtk3::ImageMenuItem'->new("Open directory");
+    $open_dir->set_image('Gtk3::Image'->new_from_icon_name('folder-open', $opt{m}));
     $open_dir->signal_connect('activate' => sub { open_file($dir) });
     $menu->append($open_dir);
 
     # Add 'Open in terminal'
-    my $open_term = 'Gtk2::ImageMenuItem'->new("Open in terminal");
-    $open_term->set_image('Gtk2::Image'->new_from_icon_name('utilities-terminal', $opt{m}));
+    my $open_term = 'Gtk3::ImageMenuItem'->new("Open in terminal");
+    $open_term->set_image('Gtk3::Image'->new_from_icon_name('utilities-terminal', $opt{m}));
     $open_term->signal_connect('activate' => sub { system "cd \Q$dir\E; $opt{t} &" });
     $menu->append($open_term);
 
@@ -121,13 +121,13 @@ sub create_submenu {
     my ($item, $dir) = @_;
 
     # Create a new menu
-    my $menu = 'Gtk2::Menu'->new;
+    my $menu = 'Gtk3::Menu'->new;
 
     # Add menu header
     add_header($menu, $dir);
 
     # Append an horizontal separator
-    $menu->append('Gtk2::SeparatorMenuItem'->new);
+    $menu->append('Gtk3::SeparatorMenuItem'->new);
 
     # Add the dir content in this new menu
     add_content($menu, $dir);
@@ -148,13 +148,13 @@ sub append_dir {
     my ($submenu, $dirname, $dir) = @_;
 
     # Create the dir submenu
-    my $dirmenu = 'Gtk2::Menu'->new;
+    my $dirmenu = 'Gtk3::Menu'->new;
 
     # Create a new menu item
-    my $item = 'Gtk2::ImageMenuItem'->new($dirname);
+    my $item = 'Gtk3::ImageMenuItem'->new($dirname);
 
     # Set icon
-    $item->set_image('Gtk2::Image'->new_from_icon_name('folder', $opt{m}));
+    $item->set_image('Gtk3::Image'->new_from_icon_name('folder', $opt{m}));
 
     # Set a signal
     $item->signal_connect('activate' => sub { create_submenu($item, $dir) });
@@ -244,13 +244,13 @@ sub file_actions {
     }
 
     # Right-click menu
-    my $menu = 'Gtk2::Menu'->new;
+    my $menu = 'Gtk3::Menu'->new;
 
     # Open
-    my $open = 'Gtk2::ImageMenuItem'->new('Open');
+    my $open = 'Gtk3::ImageMenuItem'->new('Open');
 
     # Set icon
-    $open->set_image('Gtk2::Image'->new_from_icon_name('gtk-open', $opt{m}));
+    $open->set_image('Gtk3::Image'->new_from_icon_name('gtk-open', $opt{m}));
 
     # Set a signal (activates on click)
     $open->signal_connect('activate' => sub { open_file($file) });
@@ -259,10 +259,10 @@ sub file_actions {
     $menu->append($open);
 
     # Delete
-    my $delete = 'Gtk2::ImageMenuItem'->new('Delete');
+    my $delete = 'Gtk3::ImageMenuItem'->new('Delete');
 
     # Set icon
-    $delete->set_image('Gtk2::Image'->new_from_icon_name('gtk-delete', $opt{m}));
+    $delete->set_image('Gtk3::Image'->new_from_icon_name('gtk-delete', $opt{m}));
 
     # Set a signal (activates on click)
     $delete->signal_connect('activate' => sub { unlink($file) and $obj->destroy });
@@ -284,10 +284,10 @@ sub append_file {
     my ($submenu, $filename, $file) = @_;
 
     # Create a new menu item
-    my $item = 'Gtk2::ImageMenuItem'->new($filename);
+    my $item = 'Gtk3::ImageMenuItem'->new($filename);
 
     # Set icon
-    $item->set_image('Gtk2::Image'->new_from_icon_name(file_icon($filename, $file), $opt{m}));
+    $item->set_image('Gtk3::Image'->new_from_icon_name(file_icon($filename, $file), $opt{m}));
 
     # Set tooltip
     $opt{T} && $item->set_property('tooltip_text', $file);
@@ -311,7 +311,7 @@ sub resolvelink {
     require File::Spec;
     my (undef, $dir, undef) = File::Spec->splitpath($file);
     $link = File::Spec->rel2abs($link, $dir);
-    $link = __SUB__->($link) if -l $link;    # recurs
+    $link = __SUB__->($link) if -l $link;       # recurse
 
     $link;
 }
@@ -374,7 +374,7 @@ sub add_content {
 sub create_main_menu {
     my ($icon, $dir, $event) = @_;
 
-    my $menu = 'Gtk2::Menu'->new;
+    my $menu = 'Gtk3::Menu'->new;
 
     if ($event->button == 1) {
         add_content($menu, $dir);
@@ -382,20 +382,20 @@ sub create_main_menu {
     elsif ($event->button == 3) {
 
         # Create a new menu item
-        my $exit = 'Gtk2::ImageMenuItem'->new('Quit');
+        my $exit = 'Gtk3::ImageMenuItem'->new('Quit');
 
         # Set icon
-        $exit->set_image('Gtk2::Image'->new_from_icon_name('application-exit', $opt{m}));
+        $exit->set_image('Gtk3::Image'->new_from_icon_name('application-exit', $opt{m}));
 
         # Set a signal (activates on click)
-        $exit->signal_connect('activate' => sub { 'Gtk2'->main_quit() });
+        $exit->signal_connect('activate' => sub { 'Gtk3'->main_quit() });
 
         # Append the item to the menu
         $menu->append($exit);
     }
 
     $menu->show_all;
-    $menu->popup(undef, undef, sub { Gtk2::StatusIcon::position_menu($menu, 0, 0, $icon) }, [1, 1], 0, 0);
+    $menu->popup(undef, undef, sub { Gtk3::StatusIcon::position_menu($menu, 0, 0, $icon) }, [1, 1], 0, 0);
 
     return 1;
 }
