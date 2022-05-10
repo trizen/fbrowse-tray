@@ -71,7 +71,7 @@ sub version {
 }
 
 # Parse arguments
-if (@ARGV && chr ord $ARGV[0] eq '-') {
+if (@ARGV and substr($ARGV[0], 0, 1) eq '-') {
     require Getopt::Std;
     Getopt::Std::getopts('Ti:m:f:t:drehv', \%opt)
       || die "Error in command-line arguments!";
@@ -327,7 +327,7 @@ sub add_content {
     while (defined(my $filename = readdir($dir_h))) {
 
         # Ignore hidden files
-        next if chr ord $filename eq '.';
+        next if (substr($filename, 0, 1) eq '.');
 
         # UTF-8 decode the filename
         $filename = decode_utf8($filename);
